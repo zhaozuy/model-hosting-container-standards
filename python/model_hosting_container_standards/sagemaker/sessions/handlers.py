@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from http import HTTPStatus
+from typing import Callable
 
 from fastapi import Request, Response
 from fastapi.exceptions import HTTPException
@@ -15,7 +16,7 @@ from .models import (
 from .utils import get_session_id_from_request
 
 
-def get_handler_for_request_type(request_type: SessionRequestType):
+def get_handler_for_request_type(request_type: SessionRequestType) -> Callable | None:
     """Map session request type to the appropriate handler function.
 
     Args:
@@ -32,7 +33,7 @@ def get_handler_for_request_type(request_type: SessionRequestType):
         return None
 
 
-async def close_session(raw_request: Request):
+async def close_session(raw_request: Request) -> Response:
     """Close an existing session and clean up its resources.
 
     Args:
@@ -68,7 +69,7 @@ async def close_session(raw_request: Request):
         )
 
 
-async def create_session(raw_request: Request):
+async def create_session(raw_request: Request) -> Response:
     """Create a new stateful session with expiration tracking.
 
     Args:

@@ -30,7 +30,7 @@ class AppendOperation(BaseModel):
     )
 
     @model_validator(mode="after")
-    def compile_jmespath_expression(self):
+    def compile_jmespath_expression(self) -> "AppendOperation":
         """Compile the JMESPath expression from the expression field."""
         if self.compiled_expression is None and self.expression:
             self.compiled_expression = jmespath.compile(self.expression)

@@ -65,7 +65,7 @@ class RegisterLoRAApiTransform(BaseLoRAApiTransform):
             adapter_name=request.name,
         )
 
-    def _transform_ok_response(self, response: Response, **kwargs):
+    def _transform_ok_response(self, response: Response, **kwargs) -> Response:
         """Transform successful registration response with adapter confirmation message.
 
         :param Response response: The original successful response
@@ -81,7 +81,7 @@ class RegisterLoRAApiTransform(BaseLoRAApiTransform):
             ),
         )
 
-    def _transform_error_response(self, response: Response, **kwargs):
+    def _transform_error_response(self, response: Response, **kwargs) -> Response:
         """Transform error response for failed registration attempts.
 
         :param Response response: The original error response

@@ -70,7 +70,7 @@ class BaseApiTransform(abc.ABC):
         self,
         func: Callable[..., Any],
         transform_request_output: BaseTransformRequestOutput,
-    ):
+    ) -> Response:
         transformed_request = transform_request_output.request
         transformed_raw_request = transform_request_output.raw_request
         func_to_call = transform_request_output.intercept_func or func
@@ -92,7 +92,9 @@ class BaseApiTransform(abc.ABC):
         return response
 
     @abc.abstractmethod
-    async def transform_request(self, raw_request: Request):
+    async def transform_request(
+        self, raw_request: Request
+    ) -> BaseTransformRequestOutput:
         """Transform an incoming HTTP request for operations.
 
         Subclasses must implement this method to handle request parsing, validation,
@@ -116,7 +118,9 @@ class BaseApiTransform(abc.ABC):
         return self._transform(request_data, self._request_shape)
 
     @abc.abstractmethod
-    def transform_response(self, response: Response, transform_request_output):
+    def transform_response(
+        self, response: Response, transform_request_output: BaseTransformRequestOutput
+    ) -> Response:
         """Transform the response based on the request processing results.
 
         Subclasses must implement this method to handle request parsing, validation,
@@ -128,7 +132,7 @@ class BaseApiTransform(abc.ABC):
         """
         raise NotImplementedError()
 
-    def _transform_ok_response(self, response: Response, **kwargs):
+    def _transform_ok_response(self, response: Response, **kwargs) -> Response:
         """Transform successful (200 OK) responses.
 
         :param Response response: The successful response to transform
@@ -136,7 +140,7 @@ class BaseApiTransform(abc.ABC):
         """
         raise NotImplementedError()
 
-    def _transform_error_response(self, response: Response, **kwargs):
+    def _transform_error_response(self, response: Response, **kwargs) -> Response:
         """Transform error responses.
 
         :param Response response: The error response to transform

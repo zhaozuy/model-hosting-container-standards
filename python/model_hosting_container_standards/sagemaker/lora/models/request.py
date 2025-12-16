@@ -12,14 +12,14 @@ class SageMakerRegisterLoRAAdapterRequest(BaseModel):
 
     @field_validator("name", mode="before")
     @classmethod
-    def validate_name(cls, value: str):
+    def validate_name(cls, value: str) -> str:
         if value == "":
             raise ValueError("The parameter name cannot be an empty string")
         return value
 
     @field_validator("src", mode="before")
     @classmethod
-    def validate_src(cls, value: str):
+    def validate_src(cls, value: str) -> str:
         if value == "":
             raise ValueError("The parameter src cannot be an empty string")
         return value

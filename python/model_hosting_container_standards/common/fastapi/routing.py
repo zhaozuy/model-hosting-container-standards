@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from fastapi import APIRouter, FastAPI
 from fastapi.routing import APIRoute
@@ -146,7 +146,7 @@ def mount_handlers(
 def create_router(
     prefix: str = "",
     route_resolver: Optional[Callable[[str], Optional[RouteConfig]]] = None,
-    **router_kwargs,
+    **router_kwargs: dict[str, Any],
 ) -> APIRouter:
     """Create a FastAPI router with handlers pre-mounted.
 

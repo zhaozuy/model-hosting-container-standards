@@ -1,3 +1,5 @@
+from typing import Callable
+
 from ...common.transforms.base_factory import create_transform_decorator
 from .transform import SessionApiTransform
 
@@ -16,7 +18,7 @@ def resolve_session_transform(handler_type: str) -> type:
     return SessionApiTransform
 
 
-def create_session_transform_decorator():
+def create_session_transform_decorator() -> Callable:
     return create_transform_decorator(
         "stateful_session_manager", resolve_session_transform
     )

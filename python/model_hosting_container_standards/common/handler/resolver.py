@@ -45,7 +45,7 @@ from model_hosting_container_standards.exceptions import (
 )
 from model_hosting_container_standards.logging_config import logger
 
-from .registry import handler_registry
+from .registry import HandlerRegistry, handler_registry
 
 
 class HandlerConfig(ABC):
@@ -96,7 +96,9 @@ class GenericHandlerResolver:
     for each resolution step, making the code more maintainable and testable.
     """
 
-    def __init__(self, config: HandlerConfig, registry=None) -> None:
+    def __init__(
+        self, config: HandlerConfig, registry: Optional[HandlerRegistry] = None
+    ) -> None:
         """Initialize the handler resolver.
 
         Args:

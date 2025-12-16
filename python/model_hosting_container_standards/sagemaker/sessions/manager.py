@@ -8,7 +8,7 @@ import tempfile
 import time
 import uuid
 from threading import RLock
-from typing import Optional
+from typing import Any, Optional
 
 from ...logging_config import logger
 from ..config import SageMakerConfig
@@ -39,7 +39,7 @@ class Session:
         if self.expiration_ts is None:
             self.expiration_ts = self.get(".expiration_ts")
 
-    def put(self, key: str, value):
+    def put(self, key: str, value: Any) -> None:
         """Store a JSON-serializable value in the session.
 
         Args:
@@ -52,7 +52,7 @@ class Session:
         with open(self._path(key), "w") as f:
             json.dump(value, f)
 
-    def get(self, key: str, d=None):
+    def get(self, key: str, d: Any = None) -> Any:
         """Retrieve a value from the session.
 
         Args:
@@ -69,7 +69,7 @@ class Session:
         with open(path, "r") as f:
             return json.load(f)
 
-    def remove(self):
+    def remove(self) -> bool:
         """Delete the session and all its stored data from disk.
 
         Returns:
@@ -84,7 +84,7 @@ class Session:
         shutil.rmtree(self.files_path)
         return True
 
-    def _path(self, key: str):
+    def _path(self, key: str) -> str:
         """Generate a safe file path within the session directory.
 
         Args:
@@ -241,7 +241,7 @@ class SessionManager:
 
             return session
 
-    def close_session(self, session_id):
+    def close_session(self, session_id: Optional[str]) -> None:
         """Close and remove a session, deleting all its data.
 
         Args:
@@ -264,7 +264,7 @@ class SessionManager:
 
             del self.sessions[session_id]
 
-    def _clean_expired_session(self):
+    def _clean_expired_session(self) -> None:
         """Internal method to remove all expired sessions.
 
         Iterates through all sessions and closes any that have expired.

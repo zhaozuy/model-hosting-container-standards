@@ -90,7 +90,11 @@ class InjectToBodyApiTransform(BaseLoRAApiTransform):
             raw_request=raw_request,
         )
 
-    def transform_response(self, response: Response, transform_request_output):
+    def transform_response(
+        self,
+        response: Response,
+        transform_request_output: BaseLoRATransformRequestOutput,
+    ) -> Response:
         """Pass through the response without any transformations.
 
         This transformer only modifies requests by moving header data to the body.

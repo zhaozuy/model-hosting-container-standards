@@ -3,11 +3,11 @@
 from typing import Any, Callable, Optional
 
 from ...logging_config import logger
-from .registry import handler_registry
+from .registry import HandlerRegistry, handler_registry
 
 
 def create_override_decorator(
-    handler_type: str, handler_registry
+    handler_type: str, handler_registry: HandlerRegistry
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Create a simple override decorator for handler functions.
 
@@ -41,7 +41,7 @@ def create_override_decorator(
 
 def create_register_decorator(
     handler_type: str,
-    handler_registry,
+    handler_registry: HandlerRegistry,
 ) -> Callable[[Optional[Callable[..., Any]]], Callable[..., Any]]:
     """Create a register decorator that automatically sets up routes for handlers.
 

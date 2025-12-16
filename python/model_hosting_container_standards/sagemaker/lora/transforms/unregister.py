@@ -9,7 +9,7 @@ from ..models import BaseLoRATransformRequestOutput
 from ..utils import get_adapter_name_from_request_path
 
 
-def validate_sagemaker_unregister_request(raw_request: Request):
+def validate_sagemaker_unregister_request(raw_request: Request) -> str:
     adapter_name = get_adapter_name_from_request_path(raw_request)
     if not adapter_name:
         raise HTTPException(
@@ -35,7 +35,7 @@ class UnregisterLoRAApiTransform(BaseLoRAApiTransform):
             adapter_name=adapter_name,
         )
 
-    def _transform_ok_response(self, response: Response, **kwargs):
+    def _transform_ok_response(self, response: Response, **kwargs) -> Response:
         adapter_name: Optional[str] = kwargs.get("adapter_name")
         adapter_alias: Optional[str] = kwargs.get("adapter_alias")
         return Response(
@@ -45,6 +45,6 @@ class UnregisterLoRAApiTransform(BaseLoRAApiTransform):
             ),
         )
 
-    def _transform_error_response(self, response: Response, **kwargs):
+    def _transform_error_response(self, response: Response, **kwargs) -> Response:
         # TODO: add error handling
         return response

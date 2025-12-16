@@ -34,7 +34,7 @@ def _resolve_transforms(
 
 def create_transform_decorator(
     handler_type: str, transform_resolver: Callable[..., Any]
-):
+) -> Callable[..., Any]:
     """Create a decorator factory for API transform handlers.
 
     This function creates decorators that automatically apply request/response transformations
@@ -49,7 +49,7 @@ def create_transform_decorator(
     def decorator_with_params(
         request_shape: Optional[Dict[str, Any]] = None,
         response_shape: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> Callable[..., Any]:
         """Configure the transformation shapes for the decorator.
 
         :param Optional[Dict[str, Any]] request_shape: JMESPath expressions defining request data extraction.

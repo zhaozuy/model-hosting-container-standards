@@ -35,7 +35,7 @@ class BaseLoRAApiTransform(BaseApiTransform):
         self,
         response: Response,
         transform_request_output: BaseLoRATransformRequestOutput,
-    ):
+    ) -> Response:
         """Transform the response based on the request processing results.
 
         Routes to appropriate response transformation method based on HTTP status code.
@@ -57,7 +57,7 @@ class BaseLoRAApiTransform(BaseApiTransform):
                 response, adapter_name=adapter_name, adapter_alias=adapter_alias
             )
 
-    def _transform_ok_response(self, response: Response, **kwargs):
+    def _transform_ok_response(self, response: Response, **kwargs) -> Response:
         """Transform successful (200 OK) responses.
 
         :param Response response: The successful response to transform
@@ -67,7 +67,7 @@ class BaseLoRAApiTransform(BaseApiTransform):
         """
         raise NotImplementedError()
 
-    def _transform_error_response(self, response: Response, **kwargs):
+    def _transform_error_response(self, response: Response, **kwargs) -> Response:
         """Transform error responses.
 
         :param Response response: The error response to transform

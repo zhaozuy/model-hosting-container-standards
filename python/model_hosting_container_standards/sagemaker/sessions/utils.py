@@ -5,11 +5,11 @@ from fastapi import Request
 from fastapi.exceptions import HTTPException
 
 from ...logging_config import logger
-from .manager import SessionManager
+from .manager import Session, SessionManager
 from .models import SageMakerSessionHeader
 
 
-def get_session_id_from_request(raw_request: Request):
+def get_session_id_from_request(raw_request: Request) -> str | None:
     """Extract the session ID from the request headers.
 
     Args:
@@ -23,7 +23,9 @@ def get_session_id_from_request(raw_request: Request):
     return raw_request.headers.get(SageMakerSessionHeader.SESSION_ID)
 
 
-def get_session(session_manager: Optional[SessionManager], raw_request: Request):
+def get_session(
+    session_manager: Optional[SessionManager], raw_request: Request
+) -> Session | None:
     """Retrieve the session associated with the request.
 
     Args:
