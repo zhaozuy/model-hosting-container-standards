@@ -1,14 +1,19 @@
+import json
 from abc import ABC, abstractmethod
 from http import HTTPStatus
 from typing import Any, Callable, Dict, Optional
 
-import json
+import jmespath
 from fastapi import Request, Response
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, ValidationError
 
 from ...logging_config import logger
+from ..fastapi.utils import serialize_response
+from .defaults_config import SageMakerTransformsDefaultsConfig
 from .utils import set_value
+
+_sagemaker_transforms_defaults_config = SageMakerTransformsDefaultsConfig.from_env()
 
 
 class BaseTransformRequestOutput(BaseModel):
@@ -122,10 +127,12 @@ class BaseApiTransform2(ABC):
             "query_params": {},
             "path_params": {},
         }
+        # Apply defaults (if any) first so they don't overwrite anything
+        # potentially transformed from the request
+        transformed_request = self._transform_request_defaults(transformed_request)
         transformed_request = self._transform_sagemaker_request_to_engine(
             transformed_request, validated_request.model_dump()
         )
-        transformed_request = self._transform_request_defaults(transformed_request)
         raw_request = self._apply_to_raw_request(raw_request, transformed_request)
 
         result = BaseTransformRequestOutput(
@@ -176,27 +183,70 @@ class BaseApiTransform2(ABC):
             )
             return await func(raw_request)
 
+    def _transform_ok_response(
+        self,
+        raw_response: Response,
+        transform_request_output: BaseTransformRequestOutput,
+    ):
+        return Response(
+            status_code=HTTPStatus.OK.value,
+            content=self._generate_successful_response_content(
+                raw_response, transform_request_output
+            ),
+        )
+
+    def _transform_error_response(
+        self,
+        raw_response: Response,
+        transform_request_output: BaseTransformRequestOutput,
+    ):
+        return raw_response
+
+    def _normalize_response(self, raw_response: Any) -> Response:
+        if not hasattr(raw_response, "status_code"):
+            logger.debug(
+                "Response has no status_code attribute."
+                "Assuming success if the handler returned data without explicit status."
+            )
+            # Handle the case where the response is not a Response object
+            # Assume success if the handler returned data without explicit status
+            if isinstance(raw_response, BaseModel):
+                raw_response = raw_response.model_dump_json()
+            else:
+                try:
+                    raw_response = json.dumps(raw_response)
+                except TypeError:
+                    logger.error(
+                        f"Unable to serialize response to JSON: {raw_response}"
+                    )
+                    raise HTTPException(
+                        status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
+                        detail="Unable to serialize response to JSON",
+                    )
+            raw_response = Response(
+                status_code=HTTPStatus.OK.value,
+                content=raw_response,
+            )
+        return raw_response
+
     def transform_response(
         self,
         raw_response: Response,
         transform_request_output: BaseTransformRequestOutput,
     ):
-        if hasattr(raw_response, "status_code"):
-            status_code = raw_response.status_code
-            logger.debug(f"Processing response with status code: {status_code}")
+        raw_response = self._normalize_response(raw_response)
 
-            if status_code == HTTPStatus.OK.value:
-                return Response(
-                    status_code=HTTPStatus.OK.value,
-                    content=self._generate_successful_response_content(
-                        raw_response, transform_request_output
-                    ),
-                )
-            else:
-                return raw_response
+        status_code = raw_response.status_code
+        logger.debug(f"Processing response with status code: {status_code}")
+
+        if status_code == HTTPStatus.OK.value:
+            return self._transform_ok_response(
+                raw_response, transform_request_output
+            )
         else:
-            logger.debug("Response has no status_code attribute.")
-            return raw_response
+            return self._transform_error_response(
+                raw_response, transform_request_output
+            )
 
     async def transform(self, raw_request):
         logger.debug("Starting  API transformation")
@@ -231,3 +281,101 @@ class BaseApiTransform2(ABC):
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR.value,
                 detail="Unexpected error during transformation",
             )
+
+
+class BaseApiTransform2WithResponse(BaseApiTransform2):
+    def __init__(
+        self,
+        original_function,
+        engine_request_paths: Dict[str, Any],
+        engine_request_model_cls: BaseModel,
+        engine_response_paths: Dict[str, Any],
+        engine_request_defaults: Optional[Dict[str, Any]] = None,
+        sagemaker_response_defaults: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            original_function,
+            engine_request_paths,
+            engine_request_model_cls,
+            engine_request_defaults,
+        )
+        self.engine_response_paths = self._init_jmespath(engine_response_paths)
+        self.sagemaker_response_defaults = sagemaker_response_defaults
+
+    def _init_jmespath(self, paths: Dict[str, Any]):
+        jmespath_dict = {}
+        for sagemaker_path, engine_path in paths.items():
+            if engine_path is not None:
+                logger.debug(f"Compiling JMESPath expression for {engine_path}")
+                jmespath_dict[sagemaker_path] = jmespath.compile(engine_path)
+        return jmespath_dict
+
+    def _generate_successful_response_content(
+        self, raw_response, transform_request_output
+    ):
+        # Unused, do nothing
+        pass
+
+    def _transform_response_defaults(self, transformed_response):
+        if self.sagemaker_response_defaults:
+            logger.debug(
+                f"Applying sagemaker response defaults: {self.sagemaker_response_defaults}"
+            )
+            for (
+                sagemaker_path,
+                sagemaker_default,
+            ) in self.sagemaker_response_defaults.items():
+                logger.debug(f"Setting default {sagemaker_path}={sagemaker_default}")
+                transformed_response = set_value(
+                    transformed_response,
+                    sagemaker_path,
+                    sagemaker_default,
+                    create_parent=True,
+                    max_create_depth=None,
+                )
+        else:
+            logger.debug("No response defaults to apply")
+        return transformed_response
+
+    def _transform_engine_response_to_sagemaker(
+        self, engine_response, transformed_response
+    ):
+        logger.debug(
+            f"Transforming engine response to sagemaker format. Input: {engine_response}"
+        )
+        for sagemaker_path, jmespath_expr in self.engine_response_paths.items():
+            if jmespath_expr is not None:
+                value = jmespath_expr.search(engine_response)
+                transformed_response = set_value(
+                    transformed_response,
+                    sagemaker_path,
+                    value,
+                    create_parent=True,
+                    max_create_depth=None,
+                )
+        logger.debug(f"Transformed response: {transformed_response}")
+        return transformed_response
+
+    def _transform_ok_response(self, raw_response, transform_request_output):
+        serialized_response = serialize_response(raw_response)
+        transformed_response = {
+            "content": {},
+            "headers": {},
+        }
+
+        # apply sagemaker defaults before transforms to avoid overwriting
+        # any values that were set by the engine response
+        logger.debug("Applying sagemaker response defaults")
+        self._transform_response_defaults(transformed_response)
+
+        # transform to sagemaker response format
+        logger.debug("Transforming response to sagemaker format")
+        self._transform_engine_response_to_sagemaker(
+            serialized_response, transformed_response
+        )
+
+        return Response(
+            status_code=HTTPStatus.OK.value,
+            content=transformed_response.get("content"),
+            headers=transformed_response.get("headers"),
+        )

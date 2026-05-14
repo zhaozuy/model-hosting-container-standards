@@ -402,9 +402,7 @@ class TestLoRARequestResponseTransformation(BaseLoRAIntegrationTest):
             import json
 
             body = json.loads(body_bytes.decode())
-            adapter_id = (
-                body.get("model", {}).get("lora_name", "base-model")
-            )
+            adapter_id = body.get("model", {}).get("lora_name", "base-model")
 
             if adapter_id in self.adapters:
                 return Response(

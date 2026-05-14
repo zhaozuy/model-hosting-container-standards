@@ -14,9 +14,9 @@ class LoRARequestBaseModel(BaseModel):
 
 class BaseLoRAApiTransform(BaseApiTransform2):
     def _extract_additional_fields(
-        self, validated_request: LoRARequestBaseModel, raw_request: Request
+        self, validated_request: dict, raw_request: Request
     ) -> Dict[str, Any]:
-        adapter_name = validated_request.name
+        adapter_name = LoRARequestBaseModel.model_validate(validated_request).name
         adapter_alias = get_adapter_alias_from_request_header(raw_request)
 
         logger.debug(

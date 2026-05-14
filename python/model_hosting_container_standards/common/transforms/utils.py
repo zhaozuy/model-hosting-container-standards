@@ -38,6 +38,7 @@ def _set(new_value, original_value, mode, separator):
     elif mode == "prepend":
         return f"{new_value}{separator}{original_value}"
 
+
 def set_value(
     obj: Dict[str, Any],
     path: str,
@@ -95,7 +96,9 @@ def set_value(
 
     # If we found the complete parent path, just set the value
     if existing_depth == len(parent_parts):
-        existing_parent[child] = _set(value, existing_parent.get(child), mode, separator)
+        existing_parent[child] = _set(
+            value, existing_parent.get(child), mode, separator
+        )
         return obj
 
     # Parent doesn't exist completely, we need to create missing parts

@@ -1,6 +1,6 @@
 """SageMaker integration decorators."""
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -40,7 +40,6 @@ def register_load_adapter_handler(
     engine_request_lora_name_path: Optional[str] = None,
     engine_request_lora_src_path: Optional[str] = None,
     engine_request_model_cls: Optional[BaseModel] = None,
-    engine_request_defaults: Optional[Dict[str, Any]] = None,
     request_shape: Optional[dict] = None,
     response_shape: Optional[dict] = None,
 ):
@@ -71,7 +70,6 @@ def register_load_adapter_handler(
             engine_request_lora_name_path=engine_request_lora_name_path,
             engine_request_lora_src_path=engine_request_lora_src_path,
             engine_request_model_cls=engine_request_model_cls,
-            engine_request_defaults=engine_request_defaults,
         )
     else:
         logger.error(
@@ -82,7 +80,6 @@ def register_load_adapter_handler(
 def register_unload_adapter_handler(
     engine_request_lora_name_path: Optional[str] = None,
     engine_request_model_cls: Optional[BaseModel] = None,
-    engine_request_defaults: Optional[Dict[str, Any]] = None,
     request_shape: Optional[dict] = None,
     response_shape: Optional[dict] = None,
 ):
@@ -107,12 +104,14 @@ def register_unload_adapter_handler(
         return lora2_factory.register_unload_adapter_handler(
             engine_request_lora_name_path=engine_request_lora_name_path,
             engine_request_model_cls=engine_request_model_cls,
-            engine_request_defaults=engine_request_defaults,
         )
 
 
 def inject_adapter_id(
-    adapter_path: str, mode: Optional[Literal["append", "prepend", "replace"]] = None, append: bool = False, separator: Optional[str] = None
+    adapter_path: str,
+    mode: Optional[Literal["append", "prepend", "replace"]] = None,
+    append: bool = False,
+    separator: Optional[str] = None,
 ):
     """Create a decorator that injects adapter ID from SageMaker headers into request body.
 

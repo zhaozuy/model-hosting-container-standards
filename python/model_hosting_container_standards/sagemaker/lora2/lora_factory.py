@@ -5,6 +5,9 @@ from pydantic import BaseModel
 from typing_extensions import NotRequired, TypedDict
 
 from ...common.handler import handler_registry
+from ...common.transforms.base_api_transform2 import (
+    _sagemaker_transforms_defaults_config,
+)
 from ...logging_config import logger
 from ..lora.constants import LoRAHandlerType
 from .api_transforms.load_adapter import LoadLoraApiTransform
@@ -84,7 +87,6 @@ def register_load_adapter_handler(
     engine_request_lora_pinned_path: Optional[str] = None,
     engine_request_paths: Optional[SageMakerLoadLoRAEngineRequestPaths] = None,
     engine_request_model_cls: Optional[BaseModel] = None,
-    engine_request_defaults: Optional[Dict[str, Any]] = None,
 ):
     logger.info("Registering load adapter handler")
     logger.debug(
@@ -110,7 +112,7 @@ def register_load_adapter_handler(
 
     return create_lora_decorator(LoRAHandlerType.REGISTER_ADAPTER.value)(
         engine_request_paths,
-        engine_request_defaults=engine_request_defaults,
+        engine_request_defaults=_sagemaker_transforms_defaults_config.load_adapter_defaults,
         engine_request_model_cls=engine_request_model_cls,
     )
 
@@ -118,7 +120,6 @@ def register_load_adapter_handler(
 def register_unload_adapter_handler(
     engine_request_lora_name_path: str,
     engine_request_model_cls: Optional[BaseModel] = None,
-    engine_request_defaults: Optional[Dict[str, Any]] = None,
 ):
     logger.info("Registering unload adapter handler")
     logger.debug(f"Handler parameters - name_path: {engine_request_lora_name_path}")
@@ -127,6 +128,6 @@ def register_unload_adapter_handler(
         {
             "name": engine_request_lora_name_path,
         },
-        engine_request_defaults=engine_request_defaults,
+        engine_request_defaults=_sagemaker_transforms_defaults_config.unload_adapter_defaults,
         engine_request_model_cls=engine_request_model_cls,
     )
